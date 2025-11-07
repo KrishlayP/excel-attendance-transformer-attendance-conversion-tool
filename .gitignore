@@ -1,0 +1,14 @@
+/vendor/
+/node_modules/
+/public/storage
+/storage/*.key
+.env
+.env.*
+!.env.example
+/.idea/
+/.vscode/
+/npm-debug.log
+/yarn-error.log
+/composer.lock
+/package-lock.json
+.DS_Store
