@@ -189,20 +189,24 @@ class ConvertController extends Controller
             $tgt->getColumnDimensionByColumn($c)->setAutoSize(true);
         }
 
-    
-        $dir = storage_path('app/public/converted');
-        File::ensureDirectoryExists($dir, 0775, true);  
+            $dir = storage_path('app/public/converted');
 
-        $fileName = 'converted_old_matrix_' . now()->format('Ymd_His') . '.xlsx';
-        $fullPath = $dir . DIRECTORY_SEPARATOR . $fileName;
+            // Create directory **only if missing** (avoids mkdir error)
+            if (!File::exists($dir)) {
+                File::makeDirectory($dir, 0775, true);
+            }
 
-        $writer = IOFactory::createWriter($out, 'Xlsx');
-        $writer->save($fullPath);
+            $fileName = 'converted_old_matrix_' . now()->format('Ymd_His') . '.xlsx';
+            $fullPath = $dir . '/' . $fileName;
 
-        // cleanup uploaded temp
-        Storage::disk('public')->delete($uploaded);
+            $writer = IOFactory::createWriter($out, 'Xlsx');
+            $writer->save($fullPath);
 
-        return response()->download($fullPath)->deleteFileAfterSend(true);
+            // cleanup uploaded temp
+            Storage::disk('public')->delete($uploaded);
+
+            return response()->download($fullPath)->deleteFileAfterSend(true);
+
 
     }
 
