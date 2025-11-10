@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -22,7 +23,7 @@ class ConvertController extends Controller
             'new_file' => ['required','file','mimes:xls,xlsx'],
         ]);
 
-        // 1) Upload NEW file to public disk
+
         $uploaded = $request->file('new_file')->store('tmp', 'public');
         $newPath  = Storage::disk('public')->path($uploaded);
 
@@ -38,7 +39,7 @@ class ConvertController extends Controller
         $highestRow = $sheet->getHighestDataRow();
         $highestColIdx = Coordinate::columnIndexFromString($sheet->getHighestColumn());
 
-        // 3) Walk down the sheet and detect employee blocks
+
         $employees = []; // [empCode => ['name'=>..., 'days'=> ['Y-m-d'=>['in'=>..,'out'=>..,'total'=>..]]]]
         $allDates  = []; // set
 
@@ -184,23 +185,25 @@ class ConvertController extends Controller
             $rowOut += 2;
         }
 
-        // Neatness: autosize
         for ($c=1; $c<=($colIdx-1); $c++) {
             $tgt->getColumnDimensionByColumn($c)->setAutoSize(true);
         }
 
-        // 5) Save output & download
-        Storage::makeDirectory('public/converted');
-        $fileName  = 'converted_old_matrix_' . now()->format('Ymd_His') . '.xlsx';
-        $outputRel = 'public/converted/' . $fileName;
+    
+        $dir = storage_path('app/public/converted');
+        File::ensureDirectoryExists($dir, 0775, true);  
+
+        $fileName = 'converted_old_matrix_' . now()->format('Ymd_His') . '.xlsx';
+        $fullPath = $dir . DIRECTORY_SEPARATOR . $fileName;
 
         $writer = IOFactory::createWriter($out, 'Xlsx');
-        $writer->save(storage_path('app/'.$outputRel));
+        $writer->save($fullPath);
 
-        // cleanup
-        Storage::disk('public')->delete([$uploaded]);
+        // cleanup uploaded temp
+        Storage::disk('public')->delete($uploaded);
 
-        return response()->download(storage_path('app/'.$outputRel))->deleteFileAfterSend(false);
+        return response()->download($fullPath)->deleteFileAfterSend(true);
+
     }
 
     private function startsWithLabel(string $text, string $label): bool
