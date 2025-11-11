@@ -107,7 +107,6 @@
   </div>
 
   <script>
-    // Show selected file name in the drop area label
     const input = document.getElementById('new_file');
     const fileLabel = document.getElementById('fileLabel');
     input?.addEventListener('change', () => {
